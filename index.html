@@ -13,6 +13,7 @@
       --muted: #777165;
       --accent: #96762f;
       --rule: rgba(36, 35, 31, 0.14);
+      --danger: #8b2424;
       --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
@@ -107,6 +108,48 @@
       letter-spacing: 0;
       line-height: 1.55;
     }
+
+    .permission-panel {
+      padding: 34px 0 0;
+      text-align: center;
+    }
+
+    .permission-button {
+      min-height: 42px;
+      margin: 0;
+      border: 1px solid color-mix(in srgb, var(--danger) 78%, transparent);
+      background: transparent;
+      color: var(--danger);
+      font: 750 9px/1 var(--sans);
+      letter-spacing: 0.16em;
+      padding: 13px 16px 12px;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+    }
+
+    .permission-button:hover,
+    .permission-button:focus-visible {
+      border-color: var(--danger);
+      background: var(--danger);
+      color: #fff7f1;
+      outline: none;
+    }
+
+    .permission-button:disabled {
+      cursor: default;
+      opacity: 0.68;
+    }
+
+    .permission-note,
+    .permission-status {
+      max-width: 410px;
+      margin: 10px auto 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .permission-note { letter-spacing: 0.025em; }
+    .permission-status { min-height: 1.5em; }
 
     .closing { padding-top: 88px; }
 
@@ -234,6 +277,7 @@
       --muted: #4c4c48;
       --accent: #ff5a1f;
       --rule: #171715;
+      --danger: #941d1d;
       background-color: var(--paper);
       background-image:
         radial-gradient(circle at 20% 15%, rgba(255,255,255,0.13) 0 1px, transparent 1.5px),
@@ -361,6 +405,35 @@
       font-size: clamp(52px, 15vw, 104px);
       letter-spacing: -0.075em;
       line-height: 0.85;
+    }
+
+    body[data-theme="brutalist"] .permission-panel {
+      padding-top: 30px;
+      font-family: var(--mono);
+    }
+
+    body[data-theme="brutalist"] .permission-button {
+      border: 2px solid var(--ink);
+      background: var(--danger);
+      color: #e2ddd6;
+      font: 900 10px/1 var(--mono);
+      letter-spacing: 0.09em;
+      box-shadow: 4px 4px 0 rgba(17,17,15,0.92);
+    }
+
+    body[data-theme="brutalist"] .permission-button:hover,
+    body[data-theme="brutalist"] .permission-button:focus-visible {
+      background: var(--ink);
+      color: #e2ddd6;
+      box-shadow: 4px 4px 0 var(--danger);
+    }
+
+    body[data-theme="brutalist"] .permission-note,
+    body[data-theme="brutalist"] .permission-status {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
     }
 
     body[data-theme="brutalist"] .closing {
@@ -498,6 +571,7 @@
       body,
       .export-button,
       .text-button,
+      .permission-button,
       .style-switch { transition: none; }
     }
   </style>
@@ -514,6 +588,12 @@
     </header>
 
     <section class="metrics" id="metrics" aria-label="Current visit record"></section>
+
+    <section class="permission-panel" id="permissionPanel" aria-label="Restricted metrics">
+      <button class="permission-button" id="permissionButton" type="button">Do not press</button>
+      <p class="permission-note">Unlock restricted metrics. Your browser may ask for permission. Nothing is transmitted or saved.</p>
+      <p class="permission-status" id="permissionStatus" aria-live="polite"></p>
+    </section>
 
     <footer class="closing">
       <p class="privacy">Every visit is unique and is not saved.</p>
@@ -544,12 +624,17 @@
       const exportButton = document.getElementById('exportButton');
       const textButton = document.getElementById('textButton');
       const exportStatus = document.getElementById('exportStatus');
+      const permissionButton = document.getElementById('permissionButton');
+      const permissionStatus = document.getElementById('permissionStatus');
       const styleSwitch = document.getElementById('styleSwitch');
       const themeColor = document.getElementById('themeColor');
       const metricNodes = new Map();
       let timeMetricValue = null;
       let displayUpdateTimer = null;
       let exporting = false;
+      let restrictedStarted = false;
+      let restrictedGranted = false;
+      let geoWatchId = null;
 
       const pad = (n) => String(n).padStart(2, '0');
       const clean = (value) => typeof value === 'string' ? value.trim() : value;
@@ -805,6 +890,125 @@
         updateBatteryMetrics();
       }
 
+      function updateGeolocation(position) {
+        const coords = position?.coords;
+        if (!coords) return;
+        restrictedGranted = true;
+        setMetric('Precise location', `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`, 'precise-location');
+        setMetric('Location accuracy', Number.isFinite(coords.accuracy) ? `±${Math.round(coords.accuracy)} m` : null, 'location-accuracy');
+        setMetric('Altitude', Number.isFinite(coords.altitude) ? `${Math.round(coords.altitude)} m` : null, 'altitude');
+        setMetric('Heading', Number.isFinite(coords.heading) ? `${Math.round(coords.heading)}°` : null, 'heading');
+        setMetric('Movement speed', Number.isFinite(coords.speed) ? `${coords.speed.toFixed(2)} m/s` : null, 'movement-speed');
+        permissionStatus.textContent = 'Restricted metrics unlocked. Still local. Still not saved.';
+        permissionButton.textContent = 'Opened';
+      }
+
+      function geolocationError(error) {
+        if (error?.code === 1) permissionStatus.textContent = restrictedGranted ? 'Some restricted metrics unlocked; location was denied.' : 'Permission denied. The red button survives.';
+        else permissionStatus.textContent = restrictedGranted ? 'Some restricted metrics unlocked; location is unavailable.' : 'Restricted metrics could not be read.';
+      }
+
+      async function enableOrientation() {
+        if (typeof window.DeviceOrientationEvent === 'undefined') return false;
+        try {
+          let state = 'granted';
+          if (typeof DeviceOrientationEvent.requestPermission === 'function') state = await DeviceOrientationEvent.requestPermission();
+          if (state !== 'granted') return false;
+          window.addEventListener('deviceorientation', (event) => {
+            const beta = Number.isFinite(event.beta) ? `${event.beta.toFixed(1)}°` : null;
+            const gamma = Number.isFinite(event.gamma) ? `${event.gamma.toFixed(1)}°` : null;
+            const alpha = Number.isFinite(event.alpha) ? `${event.alpha.toFixed(1)}°` : null;
+            if (beta || gamma) setMetric('Device tilt', [beta && `front/back ${beta}`, gamma && `left/right ${gamma}`].filter(Boolean).join(' · '), 'device-tilt');
+            setMetric('Device heading', alpha, 'device-heading');
+            if (beta || gamma || alpha) restrictedGranted = true;
+          }, { passive: true });
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function enableMotion() {
+        if (typeof window.DeviceMotionEvent === 'undefined') return false;
+        try {
+          let state = 'granted';
+          if (typeof DeviceMotionEvent.requestPermission === 'function') state = await DeviceMotionEvent.requestPermission();
+          if (state !== 'granted') return false;
+          window.addEventListener('devicemotion', (event) => {
+            const a = event.accelerationIncludingGravity || event.acceleration;
+            if (a && [a.x, a.y, a.z].some(Number.isFinite)) {
+              const parts = [
+                Number.isFinite(a.x) ? `x ${a.x.toFixed(2)}` : null,
+                Number.isFinite(a.y) ? `y ${a.y.toFixed(2)}` : null,
+                Number.isFinite(a.z) ? `z ${a.z.toFixed(2)}` : null
+              ].filter(Boolean);
+              setMetric('Device acceleration', `${parts.join(' · ')} m/s²`, 'device-acceleration');
+              restrictedGranted = true;
+            }
+            const r = event.rotationRate;
+            if (r && [r.alpha, r.beta, r.gamma].some(Number.isFinite)) {
+              const parts = [
+                Number.isFinite(r.alpha) ? `α ${r.alpha.toFixed(1)}` : null,
+                Number.isFinite(r.beta) ? `β ${r.beta.toFixed(1)}` : null,
+                Number.isFinite(r.gamma) ? `γ ${r.gamma.toFixed(1)}` : null
+              ].filter(Boolean);
+              setMetric('Rotation rate', `${parts.join(' · ')} °/s`, 'rotation-rate');
+              restrictedGranted = true;
+            }
+          }, { passive: true });
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function requestRestrictedMetrics() {
+        if (restrictedStarted) return;
+        restrictedStarted = true;
+        permissionButton.disabled = true;
+        permissionButton.textContent = 'Asking…';
+        permissionStatus.textContent = 'Your browser may show one or more permission prompts.';
+
+        let supported = 0;
+        const sensorRequests = [];
+
+        if ('geolocation' in navigator) {
+          supported += 1;
+          geoWatchId = navigator.geolocation.watchPosition(
+            updateGeolocation,
+            geolocationError,
+            { enableHighAccuracy: true, maximumAge: 3000, timeout: 12000 }
+          );
+        }
+
+        if (typeof window.DeviceOrientationEvent !== 'undefined') {
+          supported += 1;
+          sensorRequests.push(enableOrientation());
+        }
+
+        if (typeof window.DeviceMotionEvent !== 'undefined') {
+          supported += 1;
+          sensorRequests.push(enableMotion());
+        }
+
+        if (sensorRequests.length) {
+          const results = await Promise.all(sensorRequests);
+          if (results.some(Boolean)) {
+            restrictedGranted = true;
+            permissionStatus.textContent = 'Restricted sensors unlocked. Move the device to populate them.';
+          }
+        }
+
+        if (!supported) {
+          permissionButton.textContent = 'Nothing here';
+          permissionStatus.textContent = 'This browser exposes no additional permission-based metrics.';
+        } else if (restrictedGranted) {
+          permissionButton.textContent = 'Opened';
+        } else {
+          permissionButton.textContent = 'Asked';
+        }
+      }
+
       function rowsForExport() {
         updateTimer();
         return [...metricsEl.querySelectorAll('.metric')].map((item) => ({
@@ -867,7 +1071,7 @@
         clone.style.margin = '0';
 
         const computed = getComputedStyle(document.body);
-        ['--paper','--ink','--muted','--accent','--rule','--serif','--sans','--mono'].forEach((name) => {
+        ['--paper','--ink','--muted','--accent','--rule','--danger','--serif','--sans','--mono'].forEach((name) => {
           const value = computed.getPropertyValue(name);
           if (value) clone.style.setProperty(name, value);
         });
@@ -952,10 +1156,14 @@
       window.addEventListener('resize', scheduleDisplayUpdate, { passive: true });
       window.addEventListener('focus', refreshLiveMetrics);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveMetrics(); });
+      window.addEventListener('pagehide', () => {
+        if (geoWatchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(geoWatchId);
+      }, { once: true });
 
       if (document.readyState === 'complete') addPageLoadMetric();
       else window.addEventListener('load', addPageLoadMetric, { once: true });
 
+      permissionButton.addEventListener('click', requestRestrictedMetrics);
       exportButton.addEventListener('click', exportImage);
       textButton.addEventListener('click', exportTextRecord);
       styleSwitch.addEventListener('click', toggleStyle);
