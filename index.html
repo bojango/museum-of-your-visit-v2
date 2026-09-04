@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f2efe7">
+  <meta name="theme-color" content="#f2efe7" id="themeColor">
   <meta name="color-scheme" content="light">
   <title>Museum of Your Visit</title>
   <style>
@@ -11,10 +11,11 @@
       --paper: #f2efe7;
       --ink: #24231f;
       --muted: #777165;
-      --gold: #96762f;
+      --accent: #96762f;
       --rule: rgba(36, 35, 31, 0.14);
       --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     }
 
     * { box-sizing: border-box; }
@@ -29,6 +30,7 @@
       font-family: var(--sans);
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+      transition: background 180ms ease, color 180ms ease;
     }
 
     main {
@@ -46,7 +48,7 @@
     .metric-label,
     .export-label {
       margin: 0;
-      color: var(--gold);
+      color: var(--accent);
       font-size: 10px;
       font-weight: 650;
       letter-spacing: 0.18em;
@@ -82,9 +84,7 @@
       text-transform: uppercase;
     }
 
-    .metrics {
-      padding-top: 30px;
-    }
+    .metrics { padding-top: 30px; }
 
     .metric {
       padding: 30px 0 32px;
@@ -110,9 +110,7 @@
       line-height: 1.55;
     }
 
-    .closing {
-      padding-top: 88px;
-    }
+    .closing { padding-top: 88px; }
 
     .privacy {
       max-width: 520px;
@@ -147,21 +145,47 @@
 
     button {
       appearance: none;
-      margin-top: 22px;
-      border: 1px solid var(--gold);
       border-radius: 0;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .export-button {
+      margin-top: 22px;
+      border: 1px solid var(--accent);
       background: transparent;
       color: var(--ink);
-      cursor: pointer;
       font: 650 11px/1 var(--sans);
       letter-spacing: 0.13em;
       padding: 15px 18px 14px;
-      text-transform: uppercase;
-      transition: background 160ms ease, color 160ms ease;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
     }
 
-    button:hover,
-    button:focus-visible {
+    .export-button:hover,
+    .export-button:focus-visible {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper);
+      outline: none;
+    }
+
+    .style-switch {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      z-index: 20;
+      margin: 0;
+      border: 1px solid var(--accent);
+      background: var(--paper);
+      color: var(--ink);
+      font: 700 9px/1 var(--sans);
+      letter-spacing: 0.13em;
+      padding: 12px 13px 11px;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+    }
+
+    .style-switch:hover,
+    .style-switch:focus-visible {
       background: var(--ink);
       border-color: var(--ink);
       color: var(--paper);
@@ -170,10 +194,214 @@
 
     .footer-mark {
       margin: 90px 0 0;
-      color: var(--gold);
+      color: var(--accent);
       font-family: var(--serif);
       font-size: 13px;
       font-style: italic;
+    }
+
+    /* Brutalist duplicate */
+    body[data-theme="brutalist"] {
+      --paper: #dfff00;
+      --ink: #080808;
+      --muted: #080808;
+      --accent: #080808;
+      --rule: #080808;
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-font-smoothing: auto;
+      text-rendering: geometricPrecision;
+    }
+
+    body[data-theme="brutalist"] main {
+      width: min(100% - 28px, 780px);
+      padding-top: 92px;
+      padding-bottom: 48px;
+    }
+
+    body[data-theme="brutalist"] .masthead {
+      padding: 30px 10px 52px;
+      border-top: 4px solid var(--ink);
+      border-bottom: 4px solid var(--ink);
+      text-align: center;
+    }
+
+    body[data-theme="brutalist"] .eyebrow,
+    body[data-theme="brutalist"] .metric-label,
+    body[data-theme="brutalist"] .export-label {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1.25;
+    }
+
+    body[data-theme="brutalist"] h1 {
+      max-width: none;
+      margin: 25px auto 0;
+      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-size: clamp(48px, 14vw, 96px);
+      font-weight: 900;
+      letter-spacing: -0.075em;
+      line-height: 0.82;
+      text-transform: uppercase;
+    }
+
+    body[data-theme="brutalist"] .intro {
+      max-width: 570px;
+      margin: 34px auto 0;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    body[data-theme="brutalist"] .collection-note {
+      display: inline-block;
+      margin: 28px auto 0;
+      border: 2px solid var(--ink);
+      padding: 7px 9px 6px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+
+    body[data-theme="brutalist"] .metrics {
+      padding-top: 0;
+      text-align: center;
+    }
+
+    body[data-theme="brutalist"] .metric {
+      padding: 42px 12px 44px;
+      border-bottom: 4px solid var(--ink);
+      text-align: center;
+    }
+
+    body[data-theme="brutalist"] .metric-value {
+      max-width: 720px;
+      margin: 12px auto 0;
+      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-size: clamp(27px, 7vw, 42px);
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      line-height: 0.98;
+      text-align: center;
+    }
+
+    body[data-theme="brutalist"] .metric[data-key="user-agent"] .metric-value,
+    body[data-theme="brutalist"] .metric[data-key="referrer"] .metric-value {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+    }
+
+    body[data-theme="brutalist"] .metric[data-key="time-of-visit"] {
+      margin-top: 48px;
+      padding: 38px 12px 42px;
+      border: 4px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    body[data-theme="brutalist"] .metric[data-key="time-of-visit"] .metric-label {
+      color: var(--paper);
+    }
+
+    body[data-theme="brutalist"] .metric[data-key="time-of-visit"] .metric-value {
+      margin-top: 14px;
+      color: var(--paper);
+      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-size: clamp(52px, 15vw, 104px);
+      letter-spacing: -0.075em;
+      line-height: 0.85;
+    }
+
+    body[data-theme="brutalist"] .closing {
+      padding-top: 70px;
+      text-align: center;
+    }
+
+    body[data-theme="brutalist"] .privacy {
+      max-width: 620px;
+      margin: 0 auto;
+      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-size: clamp(28px, 7vw, 44px);
+      font-weight: 900;
+      letter-spacing: -0.055em;
+      line-height: 0.95;
+      text-transform: uppercase;
+    }
+
+    body[data-theme="brutalist"] .privacy-detail {
+      max-width: 540px;
+      margin: 24px auto 0;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    body[data-theme="brutalist"] .export-panel {
+      margin-top: 64px;
+      padding-top: 34px;
+      border-top: 4px solid var(--ink);
+    }
+
+    body[data-theme="brutalist"] .export-title {
+      margin-top: 10px;
+      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-size: clamp(34px, 8vw, 54px);
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      line-height: 0.9;
+      text-transform: uppercase;
+    }
+
+    body[data-theme="brutalist"] .export-button,
+    body[data-theme="brutalist"] .style-switch {
+      border: 3px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--mono);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    body[data-theme="brutalist"] .export-button {
+      margin-top: 24px;
+      padding: 15px 18px 14px;
+      font-size: 12px;
+    }
+
+    body[data-theme="brutalist"] .style-switch {
+      padding: 11px 12px 10px;
+      font-size: 10px;
+    }
+
+    body[data-theme="brutalist"] .export-button:hover,
+    body[data-theme="brutalist"] .export-button:focus-visible,
+    body[data-theme="brutalist"] .style-switch:hover,
+    body[data-theme="brutalist"] .style-switch:focus-visible {
+      background: var(--paper);
+      color: var(--ink);
+      outline: none;
+    }
+
+    body[data-theme="brutalist"] .footer-mark {
+      margin-top: 70px;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
     @media (min-width: 720px) {
@@ -182,14 +410,35 @@
       .metrics { padding-top: 42px; }
       .metric { padding: 38px 0 40px; }
       .closing { padding-top: 112px; }
+
+      body[data-theme="brutalist"] main { padding-top: 116px; padding-bottom: 70px; }
+      body[data-theme="brutalist"] .masthead { padding: 42px 20px 66px; }
+      body[data-theme="brutalist"] .metrics { padding-top: 0; }
+      body[data-theme="brutalist"] .metric { padding: 52px 18px 54px; }
+      body[data-theme="brutalist"] .metric[data-key="time-of-visit"] { padding: 44px 18px 50px; }
+      body[data-theme="brutalist"] .closing { padding-top: 88px; }
+    }
+
+    @media (max-width: 430px) {
+      .style-switch {
+        top: max(10px, env(safe-area-inset-top));
+        right: max(10px, env(safe-area-inset-right));
+      }
+
+      body[data-theme="brutalist"] main { width: min(100% - 20px, 780px); }
+      body[data-theme="brutalist"] .metric { padding-left: 6px; padding-right: 6px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      button { transition: none; }
+      body,
+      .export-button,
+      .style-switch { transition: none; }
     }
   </style>
 </head>
-<body>
+<body data-theme="archive">
+  <button class="style-switch" id="styleSwitch" type="button" aria-pressed="false" aria-label="Switch to brutalist style">Brutalist style</button>
+
   <main>
     <header class="masthead">
       <p class="eyebrow">Digital Ephemera · Current Session</p>
@@ -207,7 +456,7 @@
       <div class="export-panel">
         <p class="export-label">Archive Copy</p>
         <h2 class="export-title">Export this visit</h2>
-        <button id="exportButton" type="button">Export</button>
+        <button class="export-button" id="exportButton" type="button">Export</button>
       </div>
 
       <p class="footer-mark">A temporary exhibit.</p>
@@ -223,6 +472,8 @@
       const metricsEl = document.getElementById('metrics');
       const collectionNote = document.getElementById('collectionNote');
       const exportButton = document.getElementById('exportButton');
+      const styleSwitch = document.getElementById('styleSwitch');
+      const themeColor = document.getElementById('themeColor');
       let timeMetricValue = null;
 
       const pad = (n) => String(n).padStart(2, '0');
@@ -505,6 +756,15 @@
         setTimeout(() => URL.revokeObjectURL(url), 0);
       }
 
+      function toggleStyle() {
+        const brutalist = document.body.dataset.theme !== 'brutalist';
+        document.body.dataset.theme = brutalist ? 'brutalist' : 'archive';
+        styleSwitch.textContent = brutalist ? 'Archive style' : 'Brutalist style';
+        styleSwitch.setAttribute('aria-pressed', brutalist ? 'true' : 'false');
+        styleSwitch.setAttribute('aria-label', brutalist ? 'Switch to archive style' : 'Switch to brutalist style');
+        themeColor.setAttribute('content', brutalist ? '#dfff00' : '#f2efe7');
+      }
+
       addInitialMetrics();
       addBatteryMetric();
 
@@ -512,6 +772,7 @@
       else window.addEventListener('load', addNavigationMetrics, { once: true });
 
       exportButton.addEventListener('click', exportVisit);
+      styleSwitch.addEventListener('click', toggleStyle);
     })();
   </script>
 </body>
