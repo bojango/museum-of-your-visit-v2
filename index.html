@@ -19,7 +19,6 @@
     }
 
     * { box-sizing: border-box; }
-
     html { background: var(--paper); }
 
     body {
@@ -142,6 +141,14 @@
       letter-spacing: -0.025em;
     }
 
+    .export-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
     button {
       appearance: none;
       border-radius: 0;
@@ -149,23 +156,44 @@
       text-transform: uppercase;
     }
 
-    .export-button {
-      margin-top: 22px;
-      border: 1px solid var(--accent);
-      background: transparent;
-      color: var(--ink);
+    .export-button,
+    .text-button {
+      margin: 0;
+      padding: 15px 18px 14px;
       font: 650 11px/1 var(--sans);
       letter-spacing: 0.13em;
-      padding: 15px 18px 14px;
       transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
     }
 
+    .export-button {
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .text-button {
+      border: 1px solid var(--rule);
+      background: transparent;
+      color: var(--muted);
+    }
+
     .export-button:hover,
-    .export-button:focus-visible {
+    .export-button:focus-visible,
+    .text-button:hover,
+    .text-button:focus-visible {
       background: var(--ink);
       border-color: var(--ink);
       color: var(--paper);
       outline: none;
+    }
+
+    .export-status {
+      min-height: 1.4em;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      line-height: 1.4;
     }
 
     .style-switch {
@@ -199,7 +227,7 @@
       font-style: italic;
     }
 
-    /* Concrete brutalist duplicate */
+    /* Concrete brutalist */
     body[data-theme="brutalist"] {
       --paper: #b9b9b4;
       --ink: #11110f;
@@ -377,14 +405,27 @@
       text-transform: uppercase;
     }
 
-    body[data-theme="brutalist"] .export-button {
+    body[data-theme="brutalist"] .export-actions {
+      justify-content: center;
       margin-top: 24px;
+    }
+
+    body[data-theme="brutalist"] .export-button,
+    body[data-theme="brutalist"] .text-button {
       border: 3px solid var(--ink);
-      background: var(--ink);
-      color: #d7d7d2;
       font: 900 12px/1 var(--mono);
       letter-spacing: 0.04em;
       padding: 15px 18px 14px;
+    }
+
+    body[data-theme="brutalist"] .export-button {
+      background: var(--ink);
+      color: #d7d7d2;
+    }
+
+    body[data-theme="brutalist"] .text-button {
+      background: transparent;
+      color: var(--ink);
     }
 
     body[data-theme="brutalist"] .style-switch {
@@ -397,7 +438,9 @@
     }
 
     body[data-theme="brutalist"] .export-button:hover,
-    body[data-theme="brutalist"] .export-button:focus-visible {
+    body[data-theme="brutalist"] .export-button:focus-visible,
+    body[data-theme="brutalist"] .text-button:hover,
+    body[data-theme="brutalist"] .text-button:focus-visible {
       background: #d7d7d2;
       color: var(--ink);
       outline: none;
@@ -408,6 +451,12 @@
       background: var(--ink);
       color: var(--accent);
       outline: none;
+    }
+
+    body[data-theme="brutalist"] .export-status {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-weight: 700;
     }
 
     body[data-theme="brutalist"] .footer-mark {
@@ -441,7 +490,6 @@
         top: max(10px, env(safe-area-inset-top));
         right: max(10px, env(safe-area-inset-right));
       }
-
       body[data-theme="brutalist"] main { width: min(100% - 20px, 780px); }
       body[data-theme="brutalist"] .metric { padding-left: 6px; padding-right: 6px; }
     }
@@ -449,6 +497,7 @@
     @media (prefers-reduced-motion: reduce) {
       body,
       .export-button,
+      .text-button,
       .style-switch { transition: none; }
     }
   </style>
@@ -473,7 +522,11 @@
       <div class="export-panel">
         <p class="export-label">Archive Copy</p>
         <h2 class="export-title">Export this visit</h2>
-        <button class="export-button" id="exportButton" type="button">Export</button>
+        <div class="export-actions">
+          <button class="export-button" id="exportButton" type="button">Export</button>
+          <button class="text-button" id="textButton" type="button">TXT</button>
+        </div>
+        <p class="export-status" id="exportStatus" aria-live="polite"></p>
       </div>
 
       <p class="footer-mark">A temporary exhibit.</p>
@@ -489,9 +542,14 @@
       const metricsEl = document.getElementById('metrics');
       const collectionNote = document.getElementById('collectionNote');
       const exportButton = document.getElementById('exportButton');
+      const textButton = document.getElementById('textButton');
+      const exportStatus = document.getElementById('exportStatus');
       const styleSwitch = document.getElementById('styleSwitch');
       const themeColor = document.getElementById('themeColor');
+      const metricNodes = new Map();
       let timeMetricValue = null;
+      let displayUpdateTimer = null;
+      let exporting = false;
 
       const pad = (n) => String(n).padStart(2, '0');
       const clean = (value) => typeof value === 'string' ? value.trim() : value;
@@ -505,13 +563,34 @@
         return typeof value === 'boolean';
       };
 
-      function addMetric(label, value, key = '') {
+      const metricKey = (label, key) => key || String(label).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      function setMetric(label, value, key = '') {
+        const id = metricKey(label, key);
         value = clean(value);
-        if (!valid(value)) return null;
+        const existing = metricNodes.get(id);
+
+        if (!valid(value)) {
+          if (existing) {
+            existing.item.remove();
+            metricNodes.delete(id);
+          }
+          return null;
+        }
+
+        if (existing) {
+          existing.valueEl.textContent = String(value);
+          if (existing.label !== label) {
+            existing.labelEl.textContent = label;
+            existing.item.dataset.label = label;
+            existing.label = label;
+          }
+          return existing.valueEl;
+        }
 
         const item = document.createElement('article');
         item.className = 'metric';
-        if (key) item.dataset.key = key;
+        item.dataset.key = id;
         item.dataset.label = label;
 
         const labelEl = document.createElement('p');
@@ -525,6 +604,7 @@
         item.append(labelEl, valueEl);
         const timeItem = metricsEl.querySelector('[data-key="time-of-visit"]');
         timeItem ? metricsEl.insertBefore(item, timeItem) : metricsEl.appendChild(item);
+        metricNodes.set(id, { item, labelEl, valueEl, label });
         return valueEl;
       }
 
@@ -545,19 +625,17 @@
         const base = String(code).split('-')[0].toLowerCase();
         try {
           if (typeof Intl.DisplayNames === 'function') {
-            const displayNames = new Intl.DisplayNames([navigator.language || 'en'], { type: 'language' });
-            const name = displayNames.of(base);
+            const names = new Intl.DisplayNames([navigator.language || 'en'], { type: 'language' });
+            const name = names.of(base);
             if (valid(name)) return name;
           }
         } catch (_) {}
-
         const fallback = {
-          en: 'English', fr: 'French', de: 'German', es: 'Spanish', it: 'Italian',
-          pt: 'Portuguese', nl: 'Dutch', pl: 'Polish', sv: 'Swedish', no: 'Norwegian',
-          da: 'Danish', fi: 'Finnish', cs: 'Czech', ro: 'Romanian', hu: 'Hungarian',
-          el: 'Greek', tr: 'Turkish', ru: 'Russian', uk: 'Ukrainian', ar: 'Arabic',
-          he: 'Hebrew', hi: 'Hindi', bn: 'Bengali', ur: 'Urdu', zh: 'Chinese',
-          ja: 'Japanese', ko: 'Korean', th: 'Thai', vi: 'Vietnamese', id: 'Indonesian'
+          en: 'English', fr: 'French', de: 'German', es: 'Spanish', it: 'Italian', pt: 'Portuguese',
+          nl: 'Dutch', pl: 'Polish', sv: 'Swedish', no: 'Norwegian', da: 'Danish', fi: 'Finnish',
+          cs: 'Czech', ro: 'Romanian', hu: 'Hungarian', el: 'Greek', tr: 'Turkish', ru: 'Russian',
+          uk: 'Ukrainian', ar: 'Arabic', he: 'Hebrew', hi: 'Hindi', bn: 'Bengali', ur: 'Urdu',
+          zh: 'Chinese', ja: 'Japanese', ko: 'Korean', th: 'Thai', vi: 'Vietnamese', id: 'Indonesian'
         };
         return fallback[base] || null;
       }
@@ -580,10 +658,7 @@
         const ua = navigator.userAgent || '';
         const touchMac = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
         let m;
-
-        if ((m = ua.match(/(?:iPhone|CPU(?: iPhone)? OS) ([\d_]+)/i)) || (touchMac && (m = ua.match(/Version\/([\d.]+)/i)))) {
-          return `iPadOS/iOS ${m[1].replace(/_/g, '.')}`;
-        }
+        if ((m = ua.match(/(?:iPhone|CPU(?: iPhone)? OS) ([\d_]+)/i)) || (touchMac && (m = ua.match(/Version\/([\d.]+)/i)))) return `iPadOS/iOS ${m[1].replace(/_/g, '.')}`;
         if ((m = ua.match(/Android\s+([\d.]+)/i))) return `Android ${m[1]}`;
         if ((m = ua.match(/Mac OS X\s+([\d_]+)/i))) return `macOS ${m[1].replace(/_/g, '.')}`;
         if (/Windows NT 10\.0/i.test(ua)) return 'Windows 10/11';
@@ -597,14 +672,10 @@
       function detectBrowser() {
         const ua = navigator.userAgent || '';
         const checks = [
-          [/EdgiOS\/([\d.]+)/i, 'Edge'],
-          [/EdgA?\/([\d.]+)/i, 'Edge'],
-          [/OPiOS\/([\d.]+)/i, 'Opera'],
-          [/OPR\/([\d.]+)/i, 'Opera'],
-          [/CriOS\/([\d.]+)/i, 'Chrome'],
-          [/Chrome\/([\d.]+)/i, 'Chrome'],
-          [/FxiOS\/([\d.]+)/i, 'Firefox'],
-          [/Firefox\/([\d.]+)/i, 'Firefox']
+          [/EdgiOS\/([\d.]+)/i, 'Edge'], [/EdgA?\/([\d.]+)/i, 'Edge'],
+          [/OPiOS\/([\d.]+)/i, 'Opera'], [/OPR\/([\d.]+)/i, 'Opera'],
+          [/CriOS\/([\d.]+)/i, 'Chrome'], [/Chrome\/([\d.]+)/i, 'Chrome'],
+          [/FxiOS\/([\d.]+)/i, 'Firefox'], [/Firefox\/([\d.]+)/i, 'Firefox']
         ];
         for (const [regex, name] of checks) {
           const match = ua.match(regex);
@@ -617,24 +688,9 @@
         return null;
       }
 
-      function mediaPreference() {
-        if (!window.matchMedia) return;
-
-        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-        const light = matchMedia('(prefers-color-scheme: light)').matches;
-        if (dark || light) addMetric('Preferred colour scheme', dark ? 'Dark' : 'Light');
-
-        const moreContrast = matchMedia('(prefers-contrast: more)').matches;
-        const lessContrast = matchMedia('(prefers-contrast: less)').matches;
-        if (moreContrast || lessContrast) addMetric('Contrast preference', moreContrast ? 'More' : 'Less');
-        else if (matchMedia('(forced-colors: active)').matches) addMetric('High contrast', 'Active');
-      }
-
       function screenOrientation() {
         try {
-          if (screen.orientation && valid(screen.orientation.type)) {
-            return screen.orientation.type.replace('-', ' ');
-          }
+          if (screen.orientation && valid(screen.orientation.type)) return screen.orientation.type.replace(/-/g, ' ');
           if (window.matchMedia) {
             if (matchMedia('(orientation: portrait)').matches) return 'Portrait';
             if (matchMedia('(orientation: landscape)').matches) return 'Landscape';
@@ -643,82 +699,134 @@
         return null;
       }
 
-      function addInitialMetrics() {
-        const localeOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      function updateDisplayMetrics() {
         const dpr = Number(window.devicePixelRatio) || 1;
         const physicalWidth = Math.round(screen.width * dpr);
         const physicalHeight = Math.round(screen.height * dpr);
+        if (physicalWidth > 0 && physicalHeight > 0) setMetric('Screen size', `${physicalWidth} × ${physicalHeight} px`, 'screen-size');
+        setMetric('Screen orientation', screenOrientation(), 'screen-orientation');
+      }
+
+      function scheduleDisplayUpdate() {
+        clearTimeout(displayUpdateTimer);
+        displayUpdateTimer = setTimeout(updateDisplayMetrics, 100);
+      }
+
+      const colorDark = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+      const colorLight = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
+      const contrastMore = window.matchMedia ? matchMedia('(prefers-contrast: more)') : null;
+      const contrastLess = window.matchMedia ? matchMedia('(prefers-contrast: less)') : null;
+      const forcedColors = window.matchMedia ? matchMedia('(forced-colors: active)') : null;
+
+      function updateAppearanceMetrics() {
+        if (colorDark || colorLight) {
+          const scheme = colorDark?.matches ? 'Dark' : colorLight?.matches ? 'Light' : null;
+          setMetric('Preferred colour scheme', scheme, 'colour-scheme');
+        }
+        if (contrastMore || contrastLess || forcedColors) {
+          const contrast = forcedColors?.matches ? 'High contrast' : contrastMore?.matches ? 'More' : contrastLess?.matches ? 'Less' : null;
+          setMetric('Contrast preference', contrast, 'contrast-preference');
+        }
+      }
+
+      function listenMedia(query, handler) {
+        if (!query) return;
+        if (typeof query.addEventListener === 'function') query.addEventListener('change', handler);
+        else if (typeof query.addListener === 'function') query.addListener(handler);
+      }
+
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      function updateConnectionMetrics() {
+        if (!connection) return;
+        setMetric('Connection type', connection.type, 'connection-type');
+        setMetric('Effective connection', connection.effectiveType ? String(connection.effectiveType).toUpperCase() : null, 'effective-connection');
+        setMetric('Estimated downlink', Number.isFinite(connection.downlink) && connection.downlink > 0 ? `${connection.downlink} Mbps` : null, 'estimated-downlink');
+        setMetric('Estimated latency', Number.isFinite(connection.rtt) && connection.rtt >= 0 ? `${connection.rtt} ms` : null, 'estimated-latency');
+        setMetric('Data saver', typeof connection.saveData === 'boolean' ? (connection.saveData ? 'On' : 'Off') : null, 'data-saver');
+      }
+
+      let batteryRef = null;
+      function updateBatteryMetrics() {
+        if (!batteryRef) return;
+        setMetric('Battery', Number.isFinite(batteryRef.level) && batteryRef.level >= 0 && batteryRef.level <= 1 ? `${Math.round(batteryRef.level * 100)}%` : null, 'battery');
+        setMetric('Charging', typeof batteryRef.charging === 'boolean' ? (batteryRef.charging ? 'Yes' : 'No') : null, 'charging');
+      }
+
+      async function initBatteryMetrics() {
+        if (typeof navigator.getBattery !== 'function') return;
+        try {
+          batteryRef = await navigator.getBattery();
+          if (!batteryRef) return;
+          updateBatteryMetrics();
+          batteryRef.addEventListener?.('levelchange', updateBatteryMetrics);
+          batteryRef.addEventListener?.('chargingchange', updateBatteryMetrics);
+        } catch (_) {}
+      }
+
+      function addInitialMetrics() {
+        const localeOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
         const platform = navigator.userAgentData?.platform || navigator.platform;
 
         collectionNote.textContent = `Accession ${startedAt.getFullYear()} · ${pad(startedAt.getMonth() + 1)}${pad(startedAt.getDate())}-${pad(startedAt.getHours())}${pad(startedAt.getMinutes())}${pad(startedAt.getSeconds())}`;
-
-        addMetric('Device', detectDevice());
-        addMetric('Operating system', detectOS());
-        addMetric('Platform', platform);
-        addMetric('Browser', detectBrowser());
-        addMetric('Preferred language', languageName(navigator.language));
-        if (Array.isArray(navigator.languages) && navigator.languages.length > 1) addMetric('Browser languages', navigator.languages.join(', '));
-
-        try { addMetric('Timezone', Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (_) {}
-        addMetric('Local date', startedAt.toLocaleDateString(undefined, localeOptions));
-        addMetric('Arrival time', startedAt.toLocaleTimeString(undefined, timeOptions));
-
-        if (physicalWidth > 0 && physicalHeight > 0) addMetric('Screen size', `${physicalWidth} × ${physicalHeight} px`);
-        addMetric('Screen orientation', screenOrientation());
-
-        if (typeof navigator.maxTouchPoints === 'number') {
-          addMetric('Touch support', navigator.maxTouchPoints > 0 ? 'Yes' : 'No');
-        }
-
-        mediaPreference();
-
-        if (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0) addMetric('Approx. device memory', `${navigator.deviceMemory} GB`);
-        if (typeof navigator.cookieEnabled === 'boolean') addMetric('Cookies enabled', navigator.cookieEnabled ? 'Yes' : 'No');
-
-        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        if (connection) {
-          addMetric('Connection type', connection.type);
-          addMetric('Effective connection', connection.effectiveType ? String(connection.effectiveType).toUpperCase() : null);
-          if (Number.isFinite(connection.downlink) && connection.downlink > 0) addMetric('Estimated downlink', `${connection.downlink} Mbps`);
-          if (Number.isFinite(connection.rtt) && connection.rtt >= 0) addMetric('Estimated latency', `${connection.rtt} ms`);
-          if (typeof connection.saveData === 'boolean') addMetric('Data saver', connection.saveData ? 'On' : 'Off');
-        }
-
-        if (document.referrer) addMetric('Previous page', document.referrer, 'referrer');
-        if (Number.isFinite(history.length) && history.length > 0) addMetric('History length', String(history.length));
-
-        timeMetricValue = addMetric('Time of visit', '00:00:00', 'time-of-visit');
+        setMetric('Device', detectDevice(), 'device');
+        setMetric('Operating system', detectOS(), 'operating-system');
+        setMetric('Platform', platform, 'platform');
+        setMetric('Browser', detectBrowser(), 'browser');
+        setMetric('Preferred language', languageName(navigator.language), 'preferred-language');
+        if (Array.isArray(navigator.languages) && navigator.languages.length > 1) setMetric('Browser languages', navigator.languages.join(', '), 'browser-languages');
+        try { setMetric('Timezone', Intl.DateTimeFormat().resolvedOptions().timeZone, 'timezone'); } catch (_) {}
+        setMetric('Local date', startedAt.toLocaleDateString(undefined, localeOptions), 'local-date');
+        setMetric('Arrival time', startedAt.toLocaleTimeString(undefined, timeOptions), 'arrival-time');
+        updateDisplayMetrics();
+        if (typeof navigator.maxTouchPoints === 'number') setMetric('Touch support', navigator.maxTouchPoints > 0 ? 'Yes' : 'No', 'touch-support');
+        updateAppearanceMetrics();
+        if (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0) setMetric('Approx. device memory', `${navigator.deviceMemory} GB`, 'device-memory');
+        if (typeof navigator.cookieEnabled === 'boolean') setMetric('Cookies enabled', navigator.cookieEnabled ? 'Yes' : 'No', 'cookies-enabled');
+        updateConnectionMetrics();
+        if (document.referrer) setMetric('Previous page', document.referrer, 'referrer');
+        if (Number.isFinite(history.length) && history.length > 0) setMetric('History length', String(history.length), 'history-length');
+        timeMetricValue = setMetric('Time of visit', '00:00:00', 'time-of-visit');
         updateTimer();
         setInterval(updateTimer, 250);
-      }
-
-      async function addBatteryMetric() {
-        if (typeof navigator.getBattery !== 'function') return;
-        try {
-          const battery = await navigator.getBattery();
-          if (!battery) return;
-          if (Number.isFinite(battery.level) && battery.level >= 0 && battery.level <= 1) addMetric('Battery', `${Math.round(battery.level * 100)}%`);
-          if (typeof battery.charging === 'boolean') addMetric('Charging', battery.charging ? 'Yes' : 'No');
-        } catch (_) {}
       }
 
       function addPageLoadMetric() {
         try {
           const nav = performance.getEntriesByType('navigation')[0];
-          if (!nav) return;
-          if (Number.isFinite(nav.duration) && nav.duration > 0) addMetric('Page load time', `${Math.round(nav.duration)} ms`);
+          if (nav && Number.isFinite(nav.duration) && nav.duration > 0) setMetric('Page load time', `${Math.round(nav.duration)} ms`, 'page-load-time');
         } catch (_) {}
       }
 
-      function exportVisit() {
+      function refreshLiveMetrics() {
+        updateDisplayMetrics();
+        updateAppearanceMetrics();
+        updateConnectionMetrics();
+        updateBatteryMetrics();
+      }
+
+      function rowsForExport() {
         updateTimer();
-        const now = new Date();
-        const rows = [...metricsEl.querySelectorAll('.metric')].map((item) => ({
+        return [...metricsEl.querySelectorAll('.metric')].map((item) => ({
           label: item.dataset.label,
           value: item.querySelector('.metric-value')?.textContent?.trim()
         })).filter((row) => valid(row.label) && valid(row.value));
+      }
 
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      function exportTextRecord() {
+        const now = new Date();
+        const rows = rowsForExport();
         const lines = [
           'MUSEUM OF YOUR VISIT',
           'Temporary Digital Archive Record',
@@ -728,17 +836,97 @@
           ...rows.flatMap((row) => [row.label.toUpperCase(), row.value, '']),
           'This visit record was generated locally in your browser and was not saved by the website.'
         ];
-
-        const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
         const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-        link.href = url;
-        link.download = `museum-of-your-visit-${stamp}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 0);
+        downloadBlob(new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' }), `museum-of-your-visit-${stamp}.txt`);
+      }
+
+      function canvasBlob(canvas) {
+        return new Promise((resolve) => {
+          if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
+          else {
+            try {
+              const data = atob(canvas.toDataURL('image/png').split(',')[1]);
+              const bytes = new Uint8Array(data.length);
+              for (let i = 0; i < data.length; i++) bytes[i] = data.charCodeAt(i);
+              resolve(new Blob([bytes], { type: 'image/png' }));
+            } catch (_) { resolve(null); }
+          }
+        });
+      }
+
+      async function captureFullPage() {
+        updateTimer();
+        const doc = document.documentElement;
+        const width = Math.max(doc.scrollWidth, document.body.scrollWidth, window.innerWidth);
+        const height = Math.max(doc.scrollHeight, document.body.scrollHeight, window.innerHeight);
+        const clone = document.body.cloneNode(true);
+        clone.querySelectorAll('script').forEach((node) => node.remove());
+        clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+        clone.style.width = `${width}px`;
+        clone.style.minHeight = `${height}px`;
+        clone.style.margin = '0';
+
+        const computed = getComputedStyle(document.body);
+        ['--paper','--ink','--muted','--accent','--rule','--serif','--sans','--mono'].forEach((name) => {
+          const value = computed.getPropertyValue(name);
+          if (value) clone.style.setProperty(name, value);
+        });
+
+        const styleEl = document.createElement('style');
+        styleEl.textContent = document.querySelector('style')?.textContent || '';
+        clone.insertBefore(styleEl, clone.firstChild);
+
+        const serialized = new XMLSerializer().serializeToString(clone);
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject x="0" y="0" width="100%" height="100%">${serialized}</foreignObject></svg>`;
+        const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+
+        try {
+          const image = new Image();
+          await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = reject;
+            image.src = svgUrl;
+          });
+
+          const maxDimension = 12000;
+          const maxPixels = 40000000;
+          let scale = Math.min(Number(window.devicePixelRatio) || 1, 2);
+          scale = Math.min(scale, maxDimension / width, maxDimension / height, Math.sqrt(maxPixels / (width * height)));
+          scale = Math.max(0.25, scale);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(width * scale));
+          canvas.height = Math.max(1, Math.round(height * scale));
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas unavailable');
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const png = await canvasBlob(canvas);
+          if (!png) throw new Error('PNG conversion failed');
+          return { blob: png, extension: 'png' };
+        } catch (_) {
+          return { blob: svgBlob, extension: 'svg' };
+        } finally {
+          URL.revokeObjectURL(svgUrl);
+        }
+      }
+
+      async function exportImage() {
+        if (exporting) return;
+        exporting = true;
+        exportStatus.textContent = '';
+        try {
+          const now = new Date();
+          const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+          const theme = document.body.dataset.theme === 'brutalist' ? 'brutalist' : 'archive';
+          const image = await captureFullPage();
+          downloadBlob(image.blob, `museum-of-your-visit-${theme}-${stamp}.${image.extension}`);
+          exportStatus.textContent = image.extension === 'png' ? 'Full-page image exported.' : 'Full-page image exported as SVG by this browser.';
+        } catch (_) {
+          exportStatus.textContent = 'This browser could not create the image export.';
+        } finally {
+          exporting = false;
+        }
       }
 
       function toggleStyle() {
@@ -751,12 +939,25 @@
       }
 
       addInitialMetrics();
-      addBatteryMetric();
+      initBatteryMetrics();
+
+      listenMedia(colorDark, updateAppearanceMetrics);
+      listenMedia(colorLight, updateAppearanceMetrics);
+      listenMedia(contrastMore, updateAppearanceMetrics);
+      listenMedia(contrastLess, updateAppearanceMetrics);
+      listenMedia(forcedColors, updateAppearanceMetrics);
+      connection?.addEventListener?.('change', updateConnectionMetrics);
+      screen.orientation?.addEventListener?.('change', scheduleDisplayUpdate);
+      window.addEventListener('orientationchange', scheduleDisplayUpdate);
+      window.addEventListener('resize', scheduleDisplayUpdate, { passive: true });
+      window.addEventListener('focus', refreshLiveMetrics);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveMetrics(); });
 
       if (document.readyState === 'complete') addPageLoadMetric();
       else window.addEventListener('load', addPageLoadMetric, { once: true });
 
-      exportButton.addEventListener('click', exportVisit);
+      exportButton.addEventListener('click', exportImage);
+      textButton.addEventListener('click', exportTextRecord);
       styleSwitch.addEventListener('click', toggleStyle);
     })();
   </script>
