@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2efe7">
+  <meta name="color-scheme" content="light">
+  <title>Museum of Your Visit</title>
+  <style>
+    :root {
+      --paper: #f2efe7;
+      --ink: #24231f;
+      --muted: #777165;
+      --gold: #96762f;
+      --rule: rgba(36, 35, 31, 0.14);
+      --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--paper); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    main {
+      width: min(100% - 40px, 680px);
+      margin: 0 auto;
+      padding: 72px 0 88px;
+    }
+
+    .masthead {
+      padding-bottom: 72px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .eyebrow,
+    .metric-label,
+    .export-label {
+      margin: 0;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.18em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 560px;
+      margin: 18px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(42px, 12vw, 76px);
+      font-weight: 400;
+      letter-spacing: -0.045em;
+      line-height: 0.96;
+    }
+
+    .intro {
+      max-width: 470px;
+      margin: 34px 0 0;
+      color: var(--muted);
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .collection-note {
+      margin: 24px 0 0;
+      color: var(--ink);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+      text-transform: uppercase;
+    }
+
+    .metrics {
+      padding-top: 30px;
+    }
+
+    .metric {
+      padding: 30px 0 32px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .metric-value {
+      margin: 9px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(23px, 6vw, 31px);
+      font-variant-numeric: tabular-nums lining-nums;
+      font-weight: 400;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .metric[data-key="user-agent"] .metric-value,
+    .metric[data-key="referrer"] .metric-value {
+      font-family: var(--sans);
+      font-size: 14px;
+      letter-spacing: 0;
+      line-height: 1.55;
+    }
+
+    .closing {
+      padding-top: 88px;
+    }
+
+    .privacy {
+      max-width: 520px;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 25px;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+    }
+
+    .privacy-detail {
+      max-width: 500px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .export-panel {
+      margin-top: 62px;
+      padding-top: 32px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .export-title {
+      margin: 12px 0 0;
+      font-family: var(--serif);
+      font-size: 30px;
+      font-weight: 400;
+      letter-spacing: -0.025em;
+    }
+
+    button {
+      appearance: none;
+      margin-top: 22px;
+      border: 1px solid var(--gold);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      font: 650 11px/1 var(--sans);
+      letter-spacing: 0.13em;
+      padding: 15px 18px 14px;
+      text-transform: uppercase;
+      transition: background 160ms ease, color 160ms ease;
+    }
+
+    button:hover,
+    button:focus-visible {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper);
+      outline: none;
+    }
+
+    .footer-mark {
+      margin: 90px 0 0;
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: 13px;
+      font-style: italic;
+    }
+
+    @media (min-width: 720px) {
+      main { padding-top: 108px; padding-bottom: 120px; }
+      .masthead { padding-bottom: 96px; }
+      .metrics { padding-top: 42px; }
+      .metric { padding: 38px 0 40px; }
+      .closing { padding-top: 112px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <p class="eyebrow">Digital Ephemera · Current Session</p>
+      <h1>Museum of<br>Your Visit</h1>
+      <p class="intro">Thank you for submitting a footprint into the museum. This page records the small collection of details your browser is willing to reveal, for this visit only.</p>
+      <p class="collection-note" id="collectionNote"></p>
+    </header>
+
+    <section class="metrics" id="metrics" aria-label="Current visit record"></section>
+
+    <footer class="closing">
+      <p class="privacy">Every visit is unique and is not saved.</p>
+      <p class="privacy-detail">The information above is read and rendered locally in your browser. This site uses no analytics, tracking scripts, database, or visitor fingerprint store.</p>
+
+      <div class="export-panel">
+        <p class="export-label">Archive Copy</p>
+        <h2 class="export-title">Export this visit</h2>
+        <button id="exportButton" type="button">Export</button>
+      </div>
+
+      <p class="footer-mark">A temporary exhibit.</p>
+    </footer>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const startedAt = new Date();
+      const startedPerf = performance.now();
+      const metricsEl = document.getElementById('metrics');
+      const collectionNote = document.getElementById('collectionNote');
+      const exportButton = document.getElementById('exportButton');
+      let timeMetricValue = null;
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const clean = (value) => typeof value === 'string' ? value.trim() : value;
+      const valid = (value) => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'number') return Number.isFinite(value);
+        if (typeof value === 'string') {
+          const v = value.trim();
+          return v !== '' && !/^(unavailable|unsupported|unknown|null|undefined|n\/a)$/i.test(v);
+        }
+        return typeof value === 'boolean';
+      };
+
+      function addMetric(label, value, key = '') {
+        value = clean(value);
+        if (!valid(value)) return null;
+
+        const item = document.createElement('article');
+        item.className = 'metric';
+        if (key) item.dataset.key = key;
+        item.dataset.label = label;
+
+        const labelEl = document.createElement('p');
+        labelEl.className = 'metric-label';
+        labelEl.textContent = label;
+
+        const valueEl = document.createElement('p');
+        valueEl.className = 'metric-value';
+        valueEl.textContent = String(value);
+
+        item.append(labelEl, valueEl);
+        const timeItem = metricsEl.querySelector('[data-key="time-of-visit"]');
+        timeItem ? metricsEl.insertBefore(item, timeItem) : metricsEl.appendChild(item);
+        return valueEl;
+      }
+
+      function formatDuration(ms) {
+        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      }
+
+      function updateTimer() {
+        if (timeMetricValue) timeMetricValue.textContent = formatDuration(performance.now() - startedPerf);
+      }
+
+      function formatBytes(bytes) {
+        if (!Number.isFinite(bytes) || bytes <= 0) return null;
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+      }
+
+      function storageAvailable(kind) {
+        try {
+          const storage = window[kind];
+          const key = `__museum_test_${Date.now()}__`;
+          storage.setItem(key, '1');
+          storage.removeItem(key);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function detectDevice() {
+        const ua = navigator.userAgent || '';
+        const touchMac = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+        if (/iPhone/i.test(ua)) return 'iPhone';
+        if (/iPad/i.test(ua) || touchMac) return 'iPad';
+        if (/Android/i.test(ua) && /Mobile/i.test(ua)) return 'Android phone';
+        if (/Android/i.test(ua)) return 'Android tablet';
+        if (/Windows/i.test(ua)) return 'Windows computer';
+        if (/Macintosh|Mac OS X/i.test(ua)) return 'Mac';
+        if (/CrOS/i.test(ua)) return 'Chromebook';
+        if (/Linux/i.test(ua)) return 'Linux computer';
+        return null;
+      }
+
+      function detectOS() {
+        const ua = navigator.userAgent || '';
+        const touchMac = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+        let m;
+
+        if ((m = ua.match(/(?:iPhone|CPU(?: iPhone)? OS) ([\d_]+)/i)) || (touchMac && (m = ua.match(/Version\/([\d.]+)/i)))) {
+          return `iPadOS/iOS ${m[1].replace(/_/g, '.')}`;
+        }
+        if ((m = ua.match(/Android\s+([\d.]+)/i))) return `Android ${m[1]}`;
+        if ((m = ua.match(/Mac OS X\s+([\d_]+)/i))) return `macOS ${m[1].replace(/_/g, '.')}`;
+        if (/Windows NT 10\.0/i.test(ua)) return 'Windows 10/11';
+        if (/Windows NT 6\.3/i.test(ua)) return 'Windows 8.1';
+        if (/Windows NT 6\.1/i.test(ua)) return 'Windows 7';
+        if ((m = ua.match(/CrOS [^ ]+ ([\d.]+)/i))) return `ChromeOS ${m[1]}`;
+        if (/Linux/i.test(ua)) return 'Linux';
+        return null;
+      }
+
+      function detectBrowser() {
+        const ua = navigator.userAgent || '';
+        const checks = [
+          [/EdgiOS\/([\d.]+)/i, 'Edge'],
+          [/EdgA?\/([\d.]+)/i, 'Edge'],
+          [/OPiOS\/([\d.]+)/i, 'Opera'],
+          [/OPR\/([\d.]+)/i, 'Opera'],
+          [/CriOS\/([\d.]+)/i, 'Chrome'],
+          [/Chrome\/([\d.]+)/i, 'Chrome'],
+          [/FxiOS\/([\d.]+)/i, 'Firefox'],
+          [/Firefox\/([\d.]+)/i, 'Firefox']
+        ];
+        for (const [regex, name] of checks) {
+          const match = ua.match(regex);
+          if (match) return `${name} ${match[1]}`;
+        }
+        if (/Safari/i.test(ua)) {
+          const match = ua.match(/Version\/([\d.]+)/i);
+          if (match) return `Safari ${match[1]}`;
+        }
+        return null;
+      }
+
+      function utcOffset() {
+        const total = -startedAt.getTimezoneOffset();
+        const sign = total >= 0 ? '+' : '-';
+        const abs = Math.abs(total);
+        return `UTC${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+      }
+
+      function mediaPreference() {
+        if (!window.matchMedia) return;
+
+        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+        const light = matchMedia('(prefers-color-scheme: light)').matches;
+        if (dark || light) addMetric('Preferred colour scheme', dark ? 'Dark' : 'Light');
+
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const noMotionPreference = matchMedia('(prefers-reduced-motion: no-preference)').matches;
+        if (reduce || noMotionPreference) addMetric('Reduced motion', reduce ? 'Enabled' : 'No preference');
+
+        const moreContrast = matchMedia('(prefers-contrast: more)').matches;
+        const lessContrast = matchMedia('(prefers-contrast: less)').matches;
+        if (moreContrast || lessContrast) addMetric('Contrast preference', moreContrast ? 'More' : 'Less');
+        else if (matchMedia('(forced-colors: active)').matches) addMetric('High contrast', 'Active');
+
+        const coarse = matchMedia('(pointer: coarse)').matches;
+        const fine = matchMedia('(pointer: fine)').matches;
+        if (coarse || fine) addMetric('Primary pointer', coarse ? 'Coarse' : 'Fine');
+
+        const hover = matchMedia('(hover: hover)').matches;
+        const noHover = matchMedia('(hover: none)').matches;
+        if (hover || noHover) addMetric('Hover support', hover ? 'Yes' : 'No');
+      }
+
+      function screenOrientation() {
+        try {
+          if (screen.orientation && valid(screen.orientation.type)) {
+            return screen.orientation.type.replace('-', ' ');
+          }
+          if (window.matchMedia) {
+            if (matchMedia('(orientation: portrait)').matches) return 'Portrait';
+            if (matchMedia('(orientation: landscape)').matches) return 'Landscape';
+          }
+        } catch (_) {}
+        return null;
+      }
+
+      function addInitialMetrics() {
+        const localeOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        const dpr = Number(window.devicePixelRatio) || 1;
+        const physicalWidth = Math.round(screen.width * dpr);
+        const physicalHeight = Math.round(screen.height * dpr);
+        const platform = navigator.userAgentData?.platform || navigator.platform;
+
+        collectionNote.textContent = `Accession ${startedAt.getFullYear()} · ${pad(startedAt.getMonth() + 1)}${pad(startedAt.getDate())}-${pad(startedAt.getHours())}${pad(startedAt.getMinutes())}${pad(startedAt.getSeconds())}`;
+
+        addMetric('Device', detectDevice());
+        addMetric('Operating system', detectOS());
+        addMetric('Platform', platform);
+        addMetric('Browser', detectBrowser());
+        addMetric('User agent', navigator.userAgent, 'user-agent');
+        addMetric('Preferred language', navigator.language);
+        if (Array.isArray(navigator.languages) && navigator.languages.length > 1) addMetric('Browser languages', navigator.languages.join(', '));
+
+        try { addMetric('Timezone', Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (_) {}
+        addMetric('Local date', startedAt.toLocaleDateString(undefined, localeOptions));
+        addMetric('Arrival time', startedAt.toLocaleTimeString(undefined, timeOptions));
+        addMetric('UTC offset', utcOffset());
+
+        if (physicalWidth > 0 && physicalHeight > 0) addMetric('Screen', `${physicalWidth} × ${physicalHeight} px`);
+        if (innerWidth > 0 && innerHeight > 0) addMetric('Browser viewport', `${innerWidth} × ${innerHeight} px`);
+        if (dpr > 0) addMetric('Pixel density', `${Number(dpr.toFixed(2))}×`);
+        if (screen.colorDepth > 0) addMetric('Colour depth', `${screen.colorDepth}-bit`);
+        addMetric('Screen orientation', screenOrientation());
+
+        if (typeof navigator.maxTouchPoints === 'number') {
+          addMetric('Touch support', navigator.maxTouchPoints > 0 ? 'Yes' : 'No');
+          addMetric('Maximum touch points', String(navigator.maxTouchPoints));
+        }
+
+        mediaPreference();
+
+        if (Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency > 0) addMetric('Logical processors', String(navigator.hardwareConcurrency));
+        if (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0) addMetric('Approx. device memory', `${navigator.deviceMemory} GB`);
+        if (typeof navigator.cookieEnabled === 'boolean') addMetric('Cookies enabled', navigator.cookieEnabled ? 'Yes' : 'No');
+        if (typeof navigator.onLine === 'boolean') addMetric('Online status', navigator.onLine ? 'Online' : 'Offline');
+
+        if ('localStorage' in window && storageAvailable('localStorage')) addMetric('Local storage', 'Available');
+        if ('sessionStorage' in window && storageAvailable('sessionStorage')) addMetric('Session storage', 'Available');
+        if ('indexedDB' in window && window.indexedDB) addMetric('IndexedDB', 'Available');
+
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (connection) {
+          addMetric('Connection type', connection.type);
+          addMetric('Effective connection', connection.effectiveType ? String(connection.effectiveType).toUpperCase() : null);
+          if (Number.isFinite(connection.downlink) && connection.downlink > 0) addMetric('Estimated downlink', `${connection.downlink} Mbps`);
+          if (Number.isFinite(connection.rtt) && connection.rtt >= 0) addMetric('Estimated latency', `${connection.rtt} ms`);
+          if (typeof connection.saveData === 'boolean') addMetric('Data saver', connection.saveData ? 'On' : 'Off');
+        }
+
+        if (document.referrer) addMetric('Previous page', document.referrer, 'referrer');
+        if (Number.isFinite(history.length) && history.length > 0) addMetric('History length', String(history.length));
+
+        timeMetricValue = addMetric('Time of visit', '00:00:00', 'time-of-visit');
+        updateTimer();
+        setInterval(updateTimer, 250);
+      }
+
+      async function addBatteryMetric() {
+        if (typeof navigator.getBattery !== 'function') return;
+        try {
+          const battery = await navigator.getBattery();
+          if (!battery) return;
+          if (Number.isFinite(battery.level) && battery.level >= 0 && battery.level <= 1) addMetric('Battery', `${Math.round(battery.level * 100)}%`);
+          if (typeof battery.charging === 'boolean') addMetric('Charging', battery.charging ? 'Yes' : 'No');
+        } catch (_) {}
+      }
+
+      function addNavigationMetrics() {
+        try {
+          const nav = performance.getEntriesByType('navigation')[0];
+          if (!nav) return;
+          const navTypeMap = { navigate: 'New navigation', reload: 'Reload', back_forward: 'Back / forward', prerender: 'Prerender' };
+          addMetric('Navigation type', navTypeMap[nav.type] || nav.type);
+          if (Number.isFinite(nav.duration) && nav.duration > 0) addMetric('Page load time', `${Math.round(nav.duration)} ms`);
+          const transfer = formatBytes(nav.transferSize);
+          if (transfer) addMetric('Transfer size', transfer);
+        } catch (_) {}
+      }
+
+      function exportVisit() {
+        updateTimer();
+        const now = new Date();
+        const rows = [...metricsEl.querySelectorAll('.metric')].map((item) => ({
+          label: item.dataset.label,
+          value: item.querySelector('.metric-value')?.textContent?.trim()
+        })).filter((row) => valid(row.label) && valid(row.value));
+
+        const lines = [
+          'MUSEUM OF YOUR VISIT',
+          'Temporary Digital Archive Record',
+          '',
+          `Exported: ${now.toLocaleString()}`,
+          '',
+          ...rows.flatMap((row) => [row.label.toUpperCase(), row.value, '']),
+          'This visit record was generated locally in your browser and was not saved by the website.'
+        ];
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        link.href = url;
+        link.download = `museum-of-your-visit-${stamp}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+
+      addInitialMetrics();
+      addBatteryMetric();
+
+      if (document.readyState === 'complete') addNavigationMetrics();
+      else window.addEventListener('load', addNavigationMetrics, { once: true });
+
+      exportButton.addEventListener('click', exportVisit);
+    })();
+  </script>
+</body>
+</html>
