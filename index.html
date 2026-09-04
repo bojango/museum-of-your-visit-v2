@@ -102,7 +102,6 @@
       overflow-wrap: anywhere;
     }
 
-    .metric[data-key="user-agent"] .metric-value,
     .metric[data-key="referrer"] .metric-value {
       font-family: var(--sans);
       font-size: 14px;
@@ -200,14 +199,20 @@
       font-style: italic;
     }
 
-    /* Brutalist duplicate */
+    /* Concrete brutalist duplicate */
     body[data-theme="brutalist"] {
-      --paper: #dfff00;
-      --ink: #080808;
-      --muted: #080808;
-      --accent: #080808;
-      --rule: #080808;
-      font-family: Arial, Helvetica, sans-serif;
+      --paper: #b9b9b4;
+      --ink: #11110f;
+      --muted: #4c4c48;
+      --accent: #ff5a1f;
+      --rule: #171715;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,0.13) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 75% 65%, rgba(0,0,0,0.09) 0 1px, transparent 1.5px),
+        linear-gradient(112deg, rgba(255,255,255,0.035), rgba(0,0,0,0.025));
+      background-size: 19px 19px, 27px 27px, 100% 100%;
+      font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
       -webkit-font-smoothing: auto;
       text-rendering: geometricPrecision;
     }
@@ -225,7 +230,15 @@
       text-align: center;
     }
 
-    body[data-theme="brutalist"] .eyebrow,
+    body[data-theme="brutalist"] .eyebrow {
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      line-height: 1.25;
+    }
+
     body[data-theme="brutalist"] .metric-label,
     body[data-theme="brutalist"] .export-label {
       color: var(--ink);
@@ -239,7 +252,7 @@
     body[data-theme="brutalist"] h1 {
       max-width: none;
       margin: 25px auto 0;
-      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
       font-size: clamp(48px, 14vw, 96px);
       font-weight: 900;
       letter-spacing: -0.075em;
@@ -251,7 +264,7 @@
       max-width: 570px;
       margin: 34px auto 0;
       color: var(--ink);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
       font-size: 16px;
       font-weight: 700;
       line-height: 1.35;
@@ -262,6 +275,7 @@
       margin: 28px auto 0;
       border: 2px solid var(--ink);
       padding: 7px 9px 6px;
+      background: rgba(255,255,255,0.12);
       font-family: var(--mono);
       font-size: 10px;
       font-weight: 800;
@@ -276,14 +290,14 @@
 
     body[data-theme="brutalist"] .metric {
       padding: 42px 12px 44px;
-      border-bottom: 4px solid var(--ink);
+      border-bottom: 3px solid var(--ink);
       text-align: center;
     }
 
     body[data-theme="brutalist"] .metric-value {
       max-width: 720px;
       margin: 12px auto 0;
-      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
       font-size: clamp(27px, 7vw, 42px);
       font-weight: 900;
       letter-spacing: -0.045em;
@@ -291,7 +305,6 @@
       text-align: center;
     }
 
-    body[data-theme="brutalist"] .metric[data-key="user-agent"] .metric-value,
     body[data-theme="brutalist"] .metric[data-key="referrer"] .metric-value {
       font-family: var(--mono);
       font-size: 13px;
@@ -305,17 +318,18 @@
       padding: 38px 12px 42px;
       border: 4px solid var(--ink);
       background: var(--ink);
-      color: var(--paper);
+      color: #d7d7d2;
+      box-shadow: inset 8px 0 0 var(--accent);
     }
 
     body[data-theme="brutalist"] .metric[data-key="time-of-visit"] .metric-label {
-      color: var(--paper);
+      color: var(--accent);
     }
 
     body[data-theme="brutalist"] .metric[data-key="time-of-visit"] .metric-value {
       margin-top: 14px;
-      color: var(--paper);
-      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      color: #d7d7d2;
+      font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
       font-size: clamp(52px, 15vw, 104px);
       letter-spacing: -0.075em;
       line-height: 0.85;
@@ -329,7 +343,7 @@
     body[data-theme="brutalist"] .privacy {
       max-width: 620px;
       margin: 0 auto;
-      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
       font-size: clamp(28px, 7vw, 44px);
       font-weight: 900;
       letter-spacing: -0.055em;
@@ -355,7 +369,7 @@
 
     body[data-theme="brutalist"] .export-title {
       margin-top: 10px;
-      font-family: "Arial Black", Arial, Helvetica, sans-serif;
+      font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
       font-size: clamp(34px, 8vw, 54px);
       font-weight: 900;
       letter-spacing: -0.06em;
@@ -363,33 +377,36 @@
       text-transform: uppercase;
     }
 
-    body[data-theme="brutalist"] .export-button,
-    body[data-theme="brutalist"] .style-switch {
-      border: 3px solid var(--ink);
-      background: var(--ink);
-      color: var(--paper);
-      font-family: var(--mono);
-      font-weight: 900;
-      letter-spacing: 0.04em;
-    }
-
     body[data-theme="brutalist"] .export-button {
       margin-top: 24px;
+      border: 3px solid var(--ink);
+      background: var(--ink);
+      color: #d7d7d2;
+      font: 900 12px/1 var(--mono);
+      letter-spacing: 0.04em;
       padding: 15px 18px 14px;
-      font-size: 12px;
     }
 
     body[data-theme="brutalist"] .style-switch {
+      border: 3px solid var(--ink);
+      background: var(--accent);
+      color: var(--ink);
+      font: 900 10px/1 var(--mono);
+      letter-spacing: 0.04em;
       padding: 11px 12px 10px;
-      font-size: 10px;
     }
 
     body[data-theme="brutalist"] .export-button:hover,
-    body[data-theme="brutalist"] .export-button:focus-visible,
+    body[data-theme="brutalist"] .export-button:focus-visible {
+      background: #d7d7d2;
+      color: var(--ink);
+      outline: none;
+    }
+
     body[data-theme="brutalist"] .style-switch:hover,
     body[data-theme="brutalist"] .style-switch:focus-visible {
-      background: var(--paper);
-      color: var(--ink);
+      background: var(--ink);
+      color: var(--accent);
       outline: none;
     }
 
@@ -523,23 +540,26 @@
         if (timeMetricValue) timeMetricValue.textContent = formatDuration(performance.now() - startedPerf);
       }
 
-      function formatBytes(bytes) {
-        if (!Number.isFinite(bytes) || bytes <= 0) return null;
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-      }
-
-      function storageAvailable(kind) {
+      function languageName(code) {
+        if (!valid(code)) return null;
+        const base = String(code).split('-')[0].toLowerCase();
         try {
-          const storage = window[kind];
-          const key = `__museum_test_${Date.now()}__`;
-          storage.setItem(key, '1');
-          storage.removeItem(key);
-          return true;
-        } catch (_) {
-          return false;
-        }
+          if (typeof Intl.DisplayNames === 'function') {
+            const displayNames = new Intl.DisplayNames([navigator.language || 'en'], { type: 'language' });
+            const name = displayNames.of(base);
+            if (valid(name)) return name;
+          }
+        } catch (_) {}
+
+        const fallback = {
+          en: 'English', fr: 'French', de: 'German', es: 'Spanish', it: 'Italian',
+          pt: 'Portuguese', nl: 'Dutch', pl: 'Polish', sv: 'Swedish', no: 'Norwegian',
+          da: 'Danish', fi: 'Finnish', cs: 'Czech', ro: 'Romanian', hu: 'Hungarian',
+          el: 'Greek', tr: 'Turkish', ru: 'Russian', uk: 'Ukrainian', ar: 'Arabic',
+          he: 'Hebrew', hi: 'Hindi', bn: 'Bengali', ur: 'Urdu', zh: 'Chinese',
+          ja: 'Japanese', ko: 'Korean', th: 'Thai', vi: 'Vietnamese', id: 'Indonesian'
+        };
+        return fallback[base] || null;
       }
 
       function detectDevice() {
@@ -597,13 +617,6 @@
         return null;
       }
 
-      function utcOffset() {
-        const total = -startedAt.getTimezoneOffset();
-        const sign = total >= 0 ? '+' : '-';
-        const abs = Math.abs(total);
-        return `UTC${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
-      }
-
       function mediaPreference() {
         if (!window.matchMedia) return;
 
@@ -611,22 +624,10 @@
         const light = matchMedia('(prefers-color-scheme: light)').matches;
         if (dark || light) addMetric('Preferred colour scheme', dark ? 'Dark' : 'Light');
 
-        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const noMotionPreference = matchMedia('(prefers-reduced-motion: no-preference)').matches;
-        if (reduce || noMotionPreference) addMetric('Reduced motion', reduce ? 'Enabled' : 'No preference');
-
         const moreContrast = matchMedia('(prefers-contrast: more)').matches;
         const lessContrast = matchMedia('(prefers-contrast: less)').matches;
         if (moreContrast || lessContrast) addMetric('Contrast preference', moreContrast ? 'More' : 'Less');
         else if (matchMedia('(forced-colors: active)').matches) addMetric('High contrast', 'Active');
-
-        const coarse = matchMedia('(pointer: coarse)').matches;
-        const fine = matchMedia('(pointer: fine)').matches;
-        if (coarse || fine) addMetric('Primary pointer', coarse ? 'Coarse' : 'Fine');
-
-        const hover = matchMedia('(hover: hover)').matches;
-        const noHover = matchMedia('(hover: none)').matches;
-        if (hover || noHover) addMetric('Hover support', hover ? 'Yes' : 'No');
       }
 
       function screenOrientation() {
@@ -656,36 +657,24 @@
         addMetric('Operating system', detectOS());
         addMetric('Platform', platform);
         addMetric('Browser', detectBrowser());
-        addMetric('User agent', navigator.userAgent, 'user-agent');
-        addMetric('Preferred language', navigator.language);
+        addMetric('Preferred language', languageName(navigator.language));
         if (Array.isArray(navigator.languages) && navigator.languages.length > 1) addMetric('Browser languages', navigator.languages.join(', '));
 
         try { addMetric('Timezone', Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (_) {}
         addMetric('Local date', startedAt.toLocaleDateString(undefined, localeOptions));
         addMetric('Arrival time', startedAt.toLocaleTimeString(undefined, timeOptions));
-        addMetric('UTC offset', utcOffset());
 
-        if (physicalWidth > 0 && physicalHeight > 0) addMetric('Screen', `${physicalWidth} × ${physicalHeight} px`);
-        if (innerWidth > 0 && innerHeight > 0) addMetric('Browser viewport', `${innerWidth} × ${innerHeight} px`);
-        if (dpr > 0) addMetric('Pixel density', `${Number(dpr.toFixed(2))}×`);
-        if (screen.colorDepth > 0) addMetric('Colour depth', `${screen.colorDepth}-bit`);
+        if (physicalWidth > 0 && physicalHeight > 0) addMetric('Screen size', `${physicalWidth} × ${physicalHeight} px`);
         addMetric('Screen orientation', screenOrientation());
 
         if (typeof navigator.maxTouchPoints === 'number') {
           addMetric('Touch support', navigator.maxTouchPoints > 0 ? 'Yes' : 'No');
-          addMetric('Maximum touch points', String(navigator.maxTouchPoints));
         }
 
         mediaPreference();
 
-        if (Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency > 0) addMetric('Logical processors', String(navigator.hardwareConcurrency));
         if (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0) addMetric('Approx. device memory', `${navigator.deviceMemory} GB`);
         if (typeof navigator.cookieEnabled === 'boolean') addMetric('Cookies enabled', navigator.cookieEnabled ? 'Yes' : 'No');
-        if (typeof navigator.onLine === 'boolean') addMetric('Online status', navigator.onLine ? 'Online' : 'Offline');
-
-        if ('localStorage' in window && storageAvailable('localStorage')) addMetric('Local storage', 'Available');
-        if ('sessionStorage' in window && storageAvailable('sessionStorage')) addMetric('Session storage', 'Available');
-        if ('indexedDB' in window && window.indexedDB) addMetric('IndexedDB', 'Available');
 
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (connection) {
@@ -714,15 +703,11 @@
         } catch (_) {}
       }
 
-      function addNavigationMetrics() {
+      function addPageLoadMetric() {
         try {
           const nav = performance.getEntriesByType('navigation')[0];
           if (!nav) return;
-          const navTypeMap = { navigate: 'New navigation', reload: 'Reload', back_forward: 'Back / forward', prerender: 'Prerender' };
-          addMetric('Navigation type', navTypeMap[nav.type] || nav.type);
           if (Number.isFinite(nav.duration) && nav.duration > 0) addMetric('Page load time', `${Math.round(nav.duration)} ms`);
-          const transfer = formatBytes(nav.transferSize);
-          if (transfer) addMetric('Transfer size', transfer);
         } catch (_) {}
       }
 
@@ -762,14 +747,14 @@
         styleSwitch.textContent = brutalist ? 'Archive style' : 'Brutalist style';
         styleSwitch.setAttribute('aria-pressed', brutalist ? 'true' : 'false');
         styleSwitch.setAttribute('aria-label', brutalist ? 'Switch to archive style' : 'Switch to brutalist style');
-        themeColor.setAttribute('content', brutalist ? '#dfff00' : '#f2efe7');
+        themeColor.setAttribute('content', brutalist ? '#b9b9b4' : '#f2efe7');
       }
 
       addInitialMetrics();
       addBatteryMetric();
 
-      if (document.readyState === 'complete') addNavigationMetrics();
-      else window.addEventListener('load', addNavigationMetrics, { once: true });
+      if (document.readyState === 'complete') addPageLoadMetric();
+      else window.addEventListener('load', addPageLoadMetric, { once: true });
 
       exportButton.addEventListener('click', exportVisit);
       styleSwitch.addEventListener('click', toggleStyle);
